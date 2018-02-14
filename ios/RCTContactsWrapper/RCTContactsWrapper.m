@@ -136,18 +136,23 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
       NSArray *phoneNos = contact.phoneNumbers;
       NSArray *emailAddresses = contact.emailAddresses;
       
-      //Return full name
+      //Return each part of the name
       [contactData setValue:fullName forKey:@"name"];
-      
-      //Return first phone number
+      [contactData setValue:contact.givenName forKey:@"givenName"];
+      [contactData setValue:contact.middleName forKey:@"middleName"];
+      [contactData setValue:contact.familyName forKey:@"familyName"];
+
+      //Return phone numbers
       if([phoneNos count] > 0) {
         CNPhoneNumber *phone = ((CNLabeledValue *)phoneNos[0]).value;
         [contactData setValue:phone.stringValue forKey:@"phone"];
+        [contactData setObject:phoneNos forKey:@"phoneNumbers"];
       }
       
-      //Return first email address
+      //Return email addresses
       if([emailAddresses count] > 0) {
         [contactData setValue:((CNLabeledValue *)emailAddresses[0]).value forKey:@"email"];
+        [contactData setObject:emailAddresses forKey:"emailAddresses"];
       }
       
       [self contactPicked:contactData];
@@ -201,21 +206,26 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
       
       NSString *fullName = [self getFullNameForFirst:fNameObject middle:mNameObject last:lNameObject];
       
-      //Return full name
+      //Return each part of the name
       [contactData setValue:fullName forKey:@"name"];
+      [contactData setValue:contact.fNameObject forKey:@"givenName"];
+      [contactData setValue:contact.mNameObject forKey:@"middleName"];
+      [contactData setValue:contact.lNameObject forKey:@"familyName"];
       
-      //Return first phone number
+      //Return phone numbers
       ABMultiValueRef phoneMultiValue = ABRecordCopyValue(person, kABPersonPhoneProperty);
       NSArray *phoneNos = (__bridge NSArray *)ABMultiValueCopyArrayOfAllValues(phoneMultiValue);
       if([phoneNos count] > 0) {
         [contactData setValue:phoneNos[0] forKey:@"phone"];
+        [contactData setObject:phoneNos forKey:@"phoneNumbers"];
       }
      
-      //Return first email
+      //Return email addresses
       ABMultiValueRef emailMultiValue = ABRecordCopyValue(person, kABPersonEmailProperty);
       NSArray *emailAddresses = (__bridge NSArray *)ABMultiValueCopyArrayOfAllValues(emailMultiValue);
       if([emailAddresses count] > 0) {
         [contactData setValue:emailAddresses[0] forKey:@"email"];
+        [contactData setObject:emailAddresses forKey:"emailAddresses"];
       }
       
 
