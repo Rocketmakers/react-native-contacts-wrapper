@@ -152,7 +152,7 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
       //Return email addresses
       if([emailAddresses count] > 0) {
         [contactData setValue:((CNLabeledValue *)emailAddresses[0]).value forKey:@"email"];
-        [contactData setObject:emailAddresses forKey:"emailAddresses"];
+        [contactData setObject:emailAddresses forKey:@"emailAddresses"];
       }
       
       [self contactPicked:contactData];
@@ -225,7 +225,7 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
       NSArray *emailAddresses = (__bridge NSArray *)ABMultiValueCopyArrayOfAllValues(emailMultiValue);
       if([emailAddresses count] > 0) {
         [contactData setValue:emailAddresses[0] forKey:@"email"];
-        [contactData setObject:emailAddresses forKey:"emailAddresses"];
+        [contactData setObject:emailAddresses forKey:@"emailAddresses"];
       }
       
 
