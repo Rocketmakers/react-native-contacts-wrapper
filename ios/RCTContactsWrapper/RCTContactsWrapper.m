@@ -119,6 +119,28 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
   return [names componentsJoinedByString:@" "];
 }
 
+-(NSArray *) extractEmails:(NSArray *)emails {
+  NSMutableArray *mapped = [[NSMutableArray alloc] init];
+  int i;
+  for (i = 0; i < [emails count]; i++) {
+    CNLabeledValue *cn = [emails objectAtIndex:i];
+    [mapped addObject:cn.value];
+  }
+  
+  return mapped;
+}
+
+-(NSArray *) extractPhoneNumbers:(NSArray *)phones {
+  NSMutableArray *mapped = [[NSMutableArray alloc] init];
+  int i;
+  for (i = 0; i < [phones count]; i++) {
+    CNLabeledValue *cn = [phones objectAtIndex:i];
+    CNPhoneNumber *phone = cn.value;
+    [mapped addObject:phone.stringValue];
+  }
+  
+  return mapped;
+}
 
 
 #pragma mark - Event handlers - iOS 9+
@@ -141,18 +163,18 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
       [contactData setValue:contact.givenName forKey:@"givenName"];
       [contactData setValue:contact.middleName forKey:@"middleName"];
       [contactData setValue:contact.familyName forKey:@"familyName"];
-
+      
       //Return phone numbers
       if([phoneNos count] > 0) {
         CNPhoneNumber *phone = ((CNLabeledValue *)phoneNos[0]).value;
         [contactData setValue:phone.stringValue forKey:@"phone"];
-        [contactData setObject:phoneNos forKey:@"phoneNumbers"];
+        [contactData setObject:[self extractPhoneNumbers:phoneNos] forKey:@"phoneNumbers"];
       }
       
       //Return email addresses
       if([emailAddresses count] > 0) {
         [contactData setValue:((CNLabeledValue *)emailAddresses[0]).value forKey:@"email"];
-        [contactData setObject:emailAddresses forKey:@"emailAddresses"];
+        [contactData setObject:[self extractEmails:emailAddresses] forKey:@"emailAddresses"];
       }
       
       [self contactPicked:contactData];
@@ -208,9 +230,9 @@ RCT_EXPORT_METHOD(getEmail:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseR
       
       //Return each part of the name
       [contactData setValue:fullName forKey:@"name"];
-      [contactData setValue:contact.fNameObject forKey:@"givenName"];
-      [contactData setValue:contact.mNameObject forKey:@"middleName"];
-      [contactData setValue:contact.lNameObject forKey:@"familyName"];
+      [contactData setValue:fNameObject forKey:@"givenName"];
+      [contactData setValue:mNameObject forKey:@"middleName"];
+      [contactData setValue:lNameObject forKey:@"familyName"];
       
       //Return phone numbers
       ABMultiValueRef phoneMultiValue = ABRecordCopyValue(person, kABPersonPhoneProperty);
