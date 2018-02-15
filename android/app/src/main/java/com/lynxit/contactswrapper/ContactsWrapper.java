@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract;
+import android.provider.ContactsContract.CommonDataKinds.Email;
+import android.provider.ContactsContract.CommonDataKinds.StructuredName;
 import android.util.Log;
 
 import java.net.URI;
@@ -27,7 +29,9 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeArray;
 import com.facebook.react.uimanager.ViewManager;
 
 public class ContactsWrapper extends ReactContextBaseJavaModule implements ActivityEventListener {
@@ -144,7 +148,10 @@ public class ContactsWrapper extends ReactContextBaseJavaModule implements Activ
                             // Create the projection (SQL fields) and sort order.
                             String[] projection = {
                                 ContactsContract.Contacts.Entity.MIMETYPE,
-                                ContactsContract.Contacts.Entity.DATA1
+                                StructuredName.FAMILY_NAME,
+                                StructuredName.GIVEN_NAME,
+                                StructuredName.MIDDLE_NAME,
+                                Email.ADDRESS,
                             };
                             String sortOrder = ContactsContract.Contacts.Entity.RAW_CONTACT_ID + " ASC";
                             cursor = this.contentResolver.query(contactUri, projection, null, null, sortOrder);
@@ -152,23 +159,52 @@ public class ContactsWrapper extends ReactContextBaseJavaModule implements Activ
 
                             String mime;
                             boolean foundData = false;
-                            /* Map Any contact data we want returned to the JS object key for React Native */
-                            HashMap<String, String> returnKeys = new HashMap<String, String>();
-                            returnKeys.put(ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE, "name");
-                            returnKeys.put(ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE, "phone");
-                            returnKeys.put(ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE, "email");
 
-                            int dataIdx = cursor.getColumnIndex(ContactsContract.Contacts.Entity.DATA1);
+                            WritableArray allEmails = new WritableNativeArray();
+
                             int mimeIdx = cursor.getColumnIndex(ContactsContract.Contacts.Entity.MIMETYPE);
                             if (cursor.moveToFirst()) {
                                 do {
                                     mime = cursor.getString(mimeIdx);
-                                    if(returnKeys.containsKey(mime)) {
-                                        contactData.putString((String) returnKeys.get(mime), cursor.getString(dataIdx));
+                                    if (mime.equals(StructuredName.CONTENT_ITEM_TYPE)) {
+
+                                        String name = cursor.getString(cursor.getColumnIndex(StructuredName.DISPLAY_NAME));
+                                        String familyName = cursor.getString(cursor.getColumnIndex(StructuredName.FAMILY_NAME));
+                                        String givenName = cursor.getString(cursor.getColumnIndex(StructuredName.GIVEN_NAME));
+                                        String middleName = cursor.getString(cursor.getColumnIndex(StructuredName.MIDDLE_NAME));
+
+                                        if (name != null) {
+                                            contactData.putString("name", name);
+                                            foundData = true;
+                                        }
+                                        if (familyName != null) {
+                                            contactData.putString("familyName", familyName);
+                                            foundData = true;
+                                        }
+                                        if (givenName != null) {
+                                            contactData.putString("givenName", givenName);
+                                            foundData = true;
+                                        }
+                                        if (middleName != null) {
+                                            contactData.putString("middleName", middleName);
+                                            foundData = true;
+                                        }
+
+                                    } else if(mime.equals(Email.CONTENT_ITEM_TYPE)) {
+
+                                        String currentEmail = cursor.getString(cursor.getColumnIndex(Email.ADDRESS));
+                                        allEmails.pushString(currentEmail);
+                                        if (!contactData.hasKey("email")) {
+                                            contactData.putString("email", currentEmail);
+                                        }
+
                                         foundData = true;
+
                                     }
                                 } while (cursor.moveToNext());
                             }
+
+                            contactData.putArray("emailAddresses", allEmails);
 
                             cursor.close();
                             if(foundData) {
